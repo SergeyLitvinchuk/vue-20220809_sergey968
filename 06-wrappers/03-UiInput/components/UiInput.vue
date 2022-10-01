@@ -1,13 +1,29 @@
 <template>
-  <div class="input-group input-group_icon input-group_icon-left input-group_icon-right">
-    <div class="input-group__icon">
-      <img class="icon" alt="icon" />
+  <div
+    class="input-group"
+    :class="{
+      'input-group_icon': hasLeftIcon() || hasRightIcon(),
+      'input-group_icon-left': hasLeftIcon(),
+      'input-group_icon-right': hasRightIcon(),
+    }"
+  >
+    <div v-if="hasLeftIcon()" class="input-group__icon">
+      <slot name="left-icon"></slot>
     </div>
 
-    <input ref="input" class="form-control form-control_rounded form-control_sm" />
+    <component
+      :is="multiline ? 'textarea' : 'input'"
+      v-bind="$attrs"
+      ref="input"
+      class="form-control"
+      :class="{ 'form-control_sm': small, 'form-control_rounded': rounded }"
+      :value="modelValueProxy"
+      @input="onInput"
+      @change="onChange"
+    />
 
-    <div class="input-group__icon">
-      <img class="icon" alt="icon" />
+    <div v-if="hasRightIcon()" class="input-group__icon">
+      <slot name="right-icon"></slot>
     </div>
   </div>
 </template>
@@ -15,6 +31,42 @@
 <script>
 export default {
   name: 'UiInput',
+  inheritAttrs: false,
+  props: {
+    small: { type: Boolean, default: false },
+    rounded: { type: Boolean, default: false },
+    multiline: { type: Boolean, default: false },
+    modelValue: { type: String },
+    modelModifiers: { type: Object },
+  },
+  emits: ['update:modelValue'],
+  computed: {
+    modelValueProxy: {
+      get() {
+        return this.modelValue;
+      },
+      set(value) {
+        this.$emit('update:modelValue', value);
+      },
+    },
+  },
+  methods: {
+    focus() {
+      this.$refs.input.focus();
+    },
+    hasLeftIcon() {
+      return Boolean(this.$slots['left-icon']);
+    },
+    hasRightIcon() {
+      return Boolean(this.$slots['right-icon']);
+    },
+    onInput(e) {
+      if (!this.modelModifiers?.lazy) this.$emit('update:modelValue', e.target.value);
+    },
+    onChange(e) {
+      if (this.modelModifiers?.lazy) this.$emit('update:modelValue', e.target.value);
+    },
+  },
 };
 </script>
 
